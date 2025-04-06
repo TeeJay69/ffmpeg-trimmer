@@ -66,10 +66,10 @@ echo ffmpeg succeeded and output file created.
 
 REM Optionally, replace the original file: delete it and rename the trimmed output file
 REM Uncomment the following lines if you want automatic replacement
-REM del "%filepath%"
-REM move /Y "%output%" "%filepath%"
+del "%filepath%"
+move /Y "%output%" "%filepath%"
 
 echo.
 echo Trim operation complete. Check the output file:
-echo %output%
+echo %filepath%
 pause
