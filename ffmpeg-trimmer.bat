@@ -4,8 +4,12 @@ setlocal enabledelayedexpansion
 REM Prompt for the input file path
 set /p "filepath=Enter the full path to the file: "
 
-REM Prompt for the cut time (format: HH:MM:SS)
-set /p "cutTime=Enter the time to cut the file (HH:MM:SS): "
+REM Prompt for the trimming mode
+echo Choose trimming mode:
+echo   1) Trim from a specified time until the end
+echo   2) Trim from the beginning until a specified time
+echo   3) Trim from a specified start time to a specified end time
+set /p "mode=Enter mode (1, 2, or 3): "
 
 REM Extract directory, filename, and extension from the input file path
 for %%a in ("%filepath%") do (
@@ -14,13 +18,33 @@ for %%a in ("%filepath%") do (
     set "ext=%%~xa"
 )
 
-REM Build the output file name (appending _trimmed to the original file name)
+REM Build a temporary output file name (will be renamed later)
 set "output=%dir%%name%_trimmed%ext%"
 
-REM Run ffmpeg to trim the file starting at the specified time
-ffmpeg -i "%filepath%" -ss %cutTime% -c copy "%output%"
+REM Depending on the mode, prompt for time values and build the ffmpeg command
+if /i "%mode%"=="1" (
+    REM Mode 1: Trim from a specified time until the end.
+    set /p "startTime=Enter the start time (HH:MM:SS): "
+    echo Trimming from %startTime% to end...
+    ffmpeg -i "%filepath%" -ss %startTime% -c copy "%output%"
+) else if /i "%mode%"=="2" (
+    REM Mode 2: Trim from the beginning until a specified time.
+    set /p "endTime=Enter the end time (HH:MM:SS): "
+    echo Trimming from beginning until %endTime%...
+    ffmpeg -i "%filepath%" -to %endTime% -c copy "%output%"
+) else if /i "%mode%"=="3" (
+    REM Mode 3: Trim from a specified start time to a specified end time.
+    set /p "startTime=Enter the start time (HH:MM:SS): "
+    set /p "endTime=Enter the end time (HH:MM:SS): "
+    echo Trimming from %startTime% to %endTime%...
+    ffmpeg -i "%filepath%" -ss %startTime% -to %endTime% -c copy "%output%"
+) else (
+    echo Invalid mode selected.
+    pause
+    exit /b 1
+)
 
-REM Check if ffmpeg succeeded by verifying ERRORLEVEL (0 means success)
+REM Check if ffmpeg succeeded (errorlevel 0 means success)
 if errorlevel 1 (
     echo ffmpeg encountered an error. The file was not trimmed.
     pause
@@ -29,7 +53,7 @@ if errorlevel 1 (
     echo ffmpeg succeeded.
 )
 
-REM Delete the original file and replace it with the trimmed file
+REM Replace the original file: delete it and rename the trimmed output file
 del "%filepath%"
 move /Y "%output%" "%filepath%"
 
