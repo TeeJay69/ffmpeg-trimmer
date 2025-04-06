@@ -15,12 +15,24 @@ for %%a in ("%filepath%") do (
 )
 
 REM Build the output file name (appending _trimmed to the original file name)
-set "output=!dir!!name!_trimmed!ext!"
+set "output=%dir%%name%_trimmed%ext%"
 
-REM Use ffmpeg to trim the file starting from the specified time
+REM Run ffmpeg to trim the file starting at the specified time
 ffmpeg -i "%filepath%" -ss %cutTime% -c copy "%output%"
 
+REM Check if ffmpeg succeeded by verifying ERRORLEVEL (0 means success)
+if errorlevel 1 (
+    echo ffmpeg encountered an error. The file was not trimmed.
+    pause
+    exit /b 1
+) else (
+    echo ffmpeg succeeded.
+)
+
+REM Delete the original file and replace it with the trimmed file
+del "%filepath%"
+move /Y "%output%" "%filepath%"
+
 echo.
-echo File trimmed successfully!
-echo Output file: %output%
+echo Original file has been replaced with the trimmed version.
 pause
