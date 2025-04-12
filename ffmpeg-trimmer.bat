@@ -8,9 +8,9 @@ set "filepath=%filepath:"=%"
 
 REM Prompt for the trimming mode
 echo Choose trimming mode:
-echo   1) Trim from a specified time until the end
-echo   2) Trim from the beginning until a specified time
-echo   3) Trim from a specified start time to a specified end time
+echo   1) Keep from a specified time until the end
+echo   2) Keep from the beginning until a specified time
+echo   3) Keep from a specified start time to a specified end time
 set /p "mode=Enter mode (1, 2, or 3): "
 
 REM Extract directory, filename, and extension from the input file path
@@ -25,22 +25,22 @@ set "output=%dir%%name%_trimmed%ext%"
 
 REM Depending on the mode, prompt for time values and build the ffmpeg command
 if /i "%mode%"=="1" (
-    REM Mode 1: Trim from a specified time until the end.
-    set /p "startTime=Enter the start time (HH:MM:SS): "
+    REM Mode 1: Keep from a specified start time until the end.
+    set /p "startTime=Enter the start time from where to keep (HH:MM:SS): "
     set "startTime=!startTime:"=!"
     echo Trimming from !startTime! to end...
     ffmpeg -i "%filepath%" -ss "!startTime!" -c copy "%output%"
 ) else if /i "%mode%"=="2" (
-    REM Mode 2: Trim from the beginning until a specified time.
-    set /p "endTime=Enter the end time (HH:MM:SS): "
+    REM Mode 2: Keep from the beginning until a specified end time.
+    set /p "endTime=Enter the end time till where to keep (HH:MM:SS): "
     set "endTime=!endTime:"=!"
     echo Trimming from beginning until !endTime!...
     ffmpeg -i "%filepath%" -to "!endTime!" -c copy "%output%"
 ) else if /i "%mode%"=="3" (
-    REM Mode 3: Trim from a specified start time to a specified end time.
-    set /p "startTime=Enter the start time (HH:MM:SS): "
+    REM Mode 3: Keep from a specified start time to a specified end time.
+    set /p "startTime=Enter the start time from where to keep (HH:MM:SS): "
     set "startTime=!startTime:"=!"
-    set /p "endTime=Enter the end time (HH:MM:SS): "
+    set /p "endTime=Enter the end time till where to keep (HH:MM:SS): "
     set "endTime=!endTime:"=!"
     echo Trimming from !startTime! to !endTime!...
     ffmpeg -i "%filepath%" -ss "!startTime!" -to "!endTime!" -c copy "%output%"
@@ -50,7 +50,7 @@ if /i "%mode%"=="1" (
     exit /b 1
 )
 
-REM Check if ffmpeg succeeded (errorlevel 0) and that the output file exists
+REM Check if ffmpeg succeeded (exit code 0) and that the output file exists
 if errorlevel 1 (
     echo ffmpeg encountered an error. The file was not trimmed.
     pause
@@ -64,12 +64,15 @@ if not exist "%output%" (
 
 echo ffmpeg succeeded and output file created.
 
-REM Optionally, replace the original file: delete it and rename the trimmed output file
-REM Uncomment the following lines if you want automatic replacement
-del "%filepath%"
+REM Instead of deleting the original file, rename it with a prefix.
+REM Using "orig_" as the prefix to denote the original backup.
+set "backup=%dir%PRETRIM_%name%%ext%"
+echo Renaming original file to "%backup%"...
+move /Y "%filepath%" "%backup%"
+
+REM Rename trimmed output file to the original file name.
 move /Y "%output%" "%filepath%"
 
 echo.
-echo Trim operation complete. Check the output file:
-echo %filepath%
+echo Original file has been renamed to "%backup%" and replaced with the trimmed version.
 pause
